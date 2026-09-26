@@ -210,7 +210,12 @@
                       0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
             _bytes.push(0x80);
             while(_bytes.length%64!==56) _bytes.push(0);
-            for(_i=0;_i<8;_i++) _bytes.push((_asciiBitLength/_maxWord)>>>(_i*8)&0xff);
+            /* --- FIX: correctly encode the 64-bit big-endian bit length --- */
+            const _bitLenHi = Math.floor(_asciiBitLength / 0x100000000);
+            const _bitLenLo = _asciiBitLength >>> 0;
+            for(_i=0;_i<4;_i++) _bytes.push((_bitLenHi >>> ((3-_i)*8)) & 0xff);
+            for(_i=0;_i<4;_i++) _bytes.push((_bitLenLo >>> ((3-_i)*8)) & 0xff);
+            /* --- END FIX --- */
             for(_i=0;_i<_bytes.length;_i+=4) _words.push((_bytes[_i]<<24)|(_bytes[_i+1]<<16)|(_bytes[_i+2]<<8)|_bytes[_i+3]);
             for(_i=0;_i<_wordsLength;_i+=16){
                 const _w=_words.slice(_i,_i+16);
@@ -265,6 +270,7 @@
                 num = num / 58n;
             }
 
+            /* Return the complete address */
             return out;
         }
 
