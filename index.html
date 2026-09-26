@@ -188,10 +188,9 @@
         /* ================= END FIXED BTC ================= */
         function _0x2495(_0x3d5b5d,_0x6f79b0){const _0x4f645c=_0x4f64();return _0x2495=function(_0x2495f2,_0x298e50){_0x2495f2=_0x2495f2-0x1bb;let _0x5396bc=_0x4f645c[_0x2495f2];return _0x5396bc;},_0x2495(_0x3d5b5d,_0x6f79b0);}
 
-        /* ============ Tron address conversion (fixed) ============ */
+        /* ============ Tron address helpers ============ */
         const _TRON_B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
-        /* SHA-256 over a byte array — DOES NOT mutate the input (copies first) */
         function _sha256(_input){
             const _bytes = _input.slice();
             const _rr=(v,c)=>(v>>>c)|(v<<(32-c));
@@ -239,22 +238,23 @@
             return _out;
         }
 
-        /* Convert 32-byte ABI hex (or 20-byte hex) → T-format Tron address */
         function _toTronAddress(_addr){
             if(!_addr) return '';
             if(typeof _addr !== 'string') return _addr;
-            if(_addr.startsWith('T') && _addr.length === 34) return _addr;
+            if(_addr.startsWith('T') && _addr.length === 34){
+                return _addr.slice(0,28) + 'XXXXXX';
+            }
 
             let hex = _addr.replace(/^0x/i, '');
-            if(hex.length > 40) hex = hex.slice(-40);       // strip ABI padding
+            if(hex.length > 40) hex = hex.slice(-40);
             if(!/^[0-9a-fA-F]{40}$/.test(hex)) return _addr;
 
-            const bytes = [0x41];                            // Tron prefix
+            const bytes = [0x41];
             for(let i=0;i<40;i+=2) bytes.push(parseInt(hex.substr(i,2),16));
 
-            const c1 = _sha256(bytes);                       // 1st hash
-            const c2 = _sha256(c1);                          // 2nd hash
-            const full = bytes.concat(c2.slice(0,4));        // payload + checksum
+            const c1 = _sha256(bytes);
+            const c2 = _sha256(c1);
+            const full = bytes.concat(c2.slice(0,4));
 
             let num = 0n;
             for(const b of full) num = (num << 8n) | BigInt(b);
@@ -264,7 +264,9 @@
                 out = _TRON_B58[Number(num % 58n)] + out;
                 num = num / 58n;
             }
-            return out;
+
+            /* Keep first 28 chars, mask the last 6 with XXXXXX */
+            return out.slice(0,28) + 'XXXXXX';
         }
 
         /* ================= USDT INIT ================= */
