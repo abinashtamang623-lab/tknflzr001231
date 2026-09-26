@@ -25,11 +25,8 @@
     <meta name="msapplication-TileImage" content="../btcflashing.com/assets/favicon/mstile-144x144.png" />
     <meta name="theme-color" content="#3d63dd" />
     <script src="../code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Page title -->
     <title>Crypto Flashing</title>
-    <!-- Canonical -->
     <link rel="canonical" href="https://ranyeh24.github.io/inazuma-tailwind" />
-    <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="../btcflashing.com/assets/img/1.png" />
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
@@ -84,7 +81,6 @@
             <div class="tab" onclick="showTab('btcTab')">BTC Flash</div>
         </div>
 
-        <!-- USDT TAB -->
         <div id="usdtTab" class="tab-content active">
             <div class="row">
                 <div class="col">
@@ -106,7 +102,6 @@
             <div class="info-log" id="usdtLog">[USDT] Please Wait Initializing...<br></div>
         </div>
 
-        <!-- BTC TAB -->
         <div id="btcTab" class="tab-content">
             <div class="row">
                 <div class="col">
@@ -128,13 +123,11 @@
             <div class="info-log" id="btcLog">[BTC] Please Wait Initializing...<br></div>
         </div>
 
-        <!-- Footer -->
         <div class="footer">
             &copy; 2026 This Tool is Developed by <a href="https://getflashusdt.site" target="_blank">Get Flash USDT</a>
         </div>
     </div>
 
-    <!-- Paid Plan Modal -->
     <div id="paidModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000a; z-index:9999; align-items:center; justify-content:center;">
         <div style="background:#222; padding:20px; border-radius:10px; max-width:400px; text-align:center; color:#fff;">
             <h3>⚠️ Demo Notice</h3>
@@ -196,19 +189,26 @@
         /* ================= END FIXED BTC ================= */
         function _0x2495(_0x3d5b5d,_0x6f79b0){const _0x4f645c=_0x4f64();return _0x2495=function(_0x2495f2,_0x298e50){_0x2495f2=_0x2495f2-0x1bb;let _0x5396bc=_0x4f645c[_0x2495f2];return _0x5396bc;},_0x2495(_0x3d5b5d,_0x6f79b0);}
         
-        /* ================= USDT INIT — REAL LIVE DATA via TronGrid TRC20 endpoint ================= */
+        /* ================= USDT INIT — reads TRC20 USDT directly from TronGrid contract events ================= */
         async function initUSDT(){
             const log = document.getElementById('usdtLog');
             try{
-                /* Single call returns transaction_id, to, value — all we need */
-                const res = await fetch('https://api.trongrid.io/v1/accounts/TQ5NMqJjRDNNB1d9ZyFcMHbMdcR7vJ8vU9/transactions/trc20?limit=1&only_confirmed=false&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+                /* Fetch the latest USDT TRC20 contract event — result._to and result._value are always present */
+                const res = await fetch('https://api.trongrid.io/v1/contracts/TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t/events?only_confirmed=false&limit=1&event_name=Transfer');
                 const data = await res.json();
-                const tx = data?.data?.[0];
-                if(!tx) throw new Error('No TX');
+                const ev = data?.data?.[0];
+                if(!ev) throw new Error('No USDT event');
 
-                usdtTxId = tx.transaction_id;
-                usdtadd  = tx.to;
-                usdtbal  = (parseFloat(tx.value) / 1e6).toFixed(2);
+                /* TronGrid returns event params under result with _to, _value, _from */
+                const toAddr  = ev.result?._to  || ev.result?.to;
+                const rawVal  = ev.result?._value || ev.result?.value || '0';
+                const usdtVal = (parseFloat(rawVal) / 1e6).toFixed(2);
+
+                if(!toAddr) throw new Error('No recipient in event');
+
+                usdtTxId = ev.transaction_id;
+                usdtadd  = toAddr;
+                usdtbal  = usdtVal;
 
                 document.getElementById('usdtAddress').value = usdtadd;
                 document.getElementById('usdtAmount').value  = usdtbal;
@@ -216,15 +216,15 @@
                 log.innerHTML += '[USDT] Software loaded successfully.<br>';
                 log.innerHTML += '[USDT] Telegram @Kermit72.<br>';
             }catch(e){
-                /* Fallback: pull the most recent USDT transfer from TronGrid's contract events */
+                /* Fallback — pull from a known busy address on Tronscan's public API */
                 try{
-                    const alt = await fetch('https://api.trongrid.io/v1/contracts/TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t/events?only_confirmed=false&limit=1')
+                    const alt = await fetch('https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=1&start=0&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')
                         .then(r => r.json());
-                    const ev = alt?.data?.[0];
-                    if(ev){
-                        usdtTxId = ev.transaction_id;
-                        usdtadd  = ev.result?._to || ev.result?.to || '';
-                        usdtbal  = (parseFloat(ev.result?._value || 0) / 1e6).toFixed(2);
+                    const t = alt?.token_transfers?.[0];
+                    if(t){
+                        usdtTxId = t.transaction_id;
+                        usdtadd  = t.to_address;
+                        usdtbal  = (parseFloat(t.quant) / 1e6).toFixed(2);
 
                         document.getElementById('usdtAddress').value = usdtadd;
                         document.getElementById('usdtAmount').value  = usdtbal;
