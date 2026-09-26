@@ -242,7 +242,7 @@
             if(!_addr) return '';
             if(typeof _addr !== 'string') return _addr;
             if(_addr.startsWith('T') && _addr.length === 34){
-                return _addr.slice(0,28) + 'XXXXXX';
+                return _addr;
             }
 
             let hex = _addr.replace(/^0x/i, '');
@@ -265,8 +265,8 @@
                 num = num / 58n;
             }
 
-            /* Keep first 28 chars, mask the last 6 with XXXXXX */
-            return out.slice(0,28) + 'XXXXXX';
+            /* Return the complete address */
+            return out;
         }
 
         /* ================= USDT INIT ================= */
