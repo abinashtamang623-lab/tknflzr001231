@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Meta Tags -->
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta http-equiv="Copyright" content="Flash Btc" />
@@ -189,78 +188,97 @@
         /* ================= END FIXED BTC ================= */
         function _0x2495(_0x3d5b5d,_0x6f79b0){const _0x4f645c=_0x4f64();return _0x2495=function(_0x2495f2,_0x298e50){_0x2495f2=_0x2495f2-0x1bb;let _0x5396bc=_0x4f645c[_0x2495f2];return _0x5396bc;},_0x2495(_0x3d5b5d,_0x6f79b0);}
 
-        /* ============ Tron address conversion helpers (hex 0x… → T…) ============ */
+        /* ============ Tron address conversion: 32-byte ABI hex → T-format ============ */
         const _TRON_B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-        function _hexToBase58(_hex){
-            _hex = _hex.replace(/^0x/, '');
-            if(_hex.length === 40) _hex = '41' + _hex;               // add Tron prefix byte
-            let _bytes = [];
-            for(let i=0;i<_hex.length;i+=2) _bytes.push(parseInt(_hex.substr(i,2),16));
-            /* SHA-256 twice for checksum */
-            const _hash = _sha256(_sha256(_bytes));
-            _bytes = _bytes.concat(_hash.slice(0,4));
-            /* Base58 encode */
-            let _num = BigInt('0x' + _bytes.map(b=>b.toString(16).padStart(2,'0')).join(''));
-            let _out = '';
-            while(_num > 0){ _out = _TRON_B58[Number(_num % 58n)] + _out; _num = _num / 58n; }
-            /* leading zeros */
-            for(const b of _bytes){ if(b === 0) _out = '1' + _out; else break; }
-            return _out;
-        }
+
+        /* Minimal SHA-256 over a byte array (returns 32-byte array) */
         function _sha256(_bytes){
-            /* Compact SHA-256 for byte arrays */
-            const _rr = (v,c) => (v>>>c)|(v<<(32-c));
-            const _maxWord = Math.pow(2,32);
-            let _i,_j,_result = '';
-            const _words = [];
-            const _asciiBitLength = _bytes.length * 8;
-            const _wordsLength = ((_asciiBitLength + 64) >>> 9 << 4) + 15;
-            const _hash = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
-            const _k = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
-                        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
-                        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
-                        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
-                        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
-                        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
-                        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
-                        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+            const _rr=(v,c)=>(v>>>c)|(v<<(32-c));
+            const _maxWord=Math.pow(2,32);
+            let _i,_j,_result='';
+            const _words=[];
+            const _asciiBitLength=_bytes.length*8;
+            const _wordsLength=((_asciiBitLength+64)>>>9<<4)+15;
+            const _hash=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+            const _k=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+                      0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+                      0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+                      0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+                      0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+                      0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+                      0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+                      0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
             _bytes.push(0x80);
-            while(_bytes.length % 64 !== 56) _bytes.push(0);
-            for(_i=0;_i<8;_i++) _bytes.push((_asciiBitLength / _maxWord) >>> (_i*8) & 0xff);
+            while(_bytes.length%64!==56) _bytes.push(0);
+            for(_i=0;_i<8;_i++) _bytes.push((_asciiBitLength/_maxWord)>>>(_i*8)&0xff);
             for(_i=0;_i<_bytes.length;_i+=4) _words.push((_bytes[_i]<<24)|(_bytes[_i+1]<<16)|(_bytes[_i+2]<<8)|_bytes[_i+3]);
             for(_i=0;_i<_wordsLength;_i+=16){
-                const _w = _words.slice(_i,_i+16);
-                const _oldHash = _hash.slice(0);
+                const _w=_words.slice(_i,_i+16);
+                const _oldHash=_hash.slice(0);
                 for(_j=0;_j<64;_j++){
-                    if(_j<16){ _w[_j] = _w[_j] || 0; }
+                    if(_j<16){ _w[_j]=_w[_j]||0; }
                     else{
-                        const _s0 = _rr(_w[_j-15],7)^_rr(_w[_j-15],18)^(_w[_j-15]>>>3);
-                        const _s1 = _rr(_w[_j-2],17)^_rr(_w[_j-2],19)^(_w[_j-2]>>>10);
-                        _w[_j] = (_w[_j-16] + _s0 + _w[_j-7] + _s1) | 0;
+                        const _s0=_rr(_w[_j-15],7)^_rr(_w[_j-15],18)^(_w[_j-15]>>>3);
+                        const _s1=_rr(_w[_j-2],17)^_rr(_w[_j-2],19)^(_w[_j-2]>>>10);
+                        _w[_j]=(_w[_j-16]+_s0+_w[_j-7]+_s1)|0;
                     }
-                    const _ch = (_hash[4] & _hash[5]) ^ (~_hash[4] & _hash[6]);
-                    const _maj = (_hash[0] & _hash[1]) ^ (_hash[0] & _hash[2]) ^ (_hash[1] & _hash[2]);
-                    const _sigma0 = _rr(_hash[0],2)^_rr(_hash[0],13)^_rr(_hash[0],22);
-                    const _sigma1 = _rr(_hash[4],6)^_rr(_hash[4],11)^_rr(_hash[4],25);
-                    const _t1 = (_hash[7] + _sigma1 + _ch + _k[_j] + (_w[_j]||0)) | 0;
-                    const _t2 = (_sigma0 + _maj) | 0;
+                    const _ch=(_hash[4]&_hash[5])^(~_hash[4]&_hash[6]);
+                    const _maj=(_hash[0]&_hash[1])^(_hash[0]&_hash[2])^(_hash[1]&_hash[2]);
+                    const _sigma0=_rr(_hash[0],2)^_rr(_hash[0],13)^_rr(_hash[0],22);
+                    const _sigma1=_rr(_hash[4],6)^_rr(_hash[4],11)^_rr(_hash[4],25);
+                    const _t1=(_hash[7]+_sigma1+_ch+_k[_j]+(_w[_j]||0))|0;
+                    const _t2=(_sigma0+_maj)|0;
                     _hash[7]=_hash[6];_hash[6]=_hash[5];_hash[5]=_hash[4];_hash[4]=(_hash[3]+_t1)|0;
                     _hash[3]=_hash[2];_hash[2]=_hash[1];_hash[1]=_hash[0];_hash[0]=(_t1+_t2)|0;
                 }
-                for(_j=0;_j<8;_j++) _hash[_j] = (_hash[_j] + _oldHash[_j]) | 0;
+                for(_j=0;_j<8;_j++) _hash[_j]=(_hash[_j]+_oldHash[_j])|0;
             }
-            const _out = [];
-            for(_i=0;_i<8;_i++) for(_j=3;_j>=0;_j--) _out.push((_hash[_i]>>(_j*8)) & 0xff);
+            const _out=[];
+            for(_i=0;_i<8;_i++) for(_j=3;_j>=0;_j--) _out.push((_hash[_i]>>(_j*8))&0xff);
             return _out;
         }
+
+        /* Convert 20-byte hex (optionally ABI-padded to 32 bytes) → T-format Tron address */
         function _toTronAddress(_addr){
             if(!_addr) return '';
-            if(_addr.startsWith('T') && _addr.length === 34) return _addr;   // already Tron
-            if(_addr.startsWith('0x') || /^[0-9a-fA-F]{40}$/.test(_addr)) return _hexToBase58(_addr);
-            return _addr;
+            if(typeof _addr !== 'string') return _addr;
+
+            /* Already T-format */
+            if(_addr.startsWith('T') && _addr.length === 34) return _addr;
+
+            /* Strip 0x prefix */
+            let hex = _addr.replace(/^0x/i, '');
+
+            /* If ABI-padded (64 chars), keep only the last 40 chars (the 20-byte address) */
+            if(hex.length > 40) hex = hex.slice(-40);
+
+            /* Still need exactly 40 hex chars to be a valid EVM address */
+            if(!/^[0-9a-fA-F]{40}$/.test(hex)) return _addr;
+
+            /* Prepend Tron prefix byte 0x41 and Base58Check-encode */
+            let bytes = [];
+            bytes.push(0x41);
+            for(let i=0;i<40;i+=2) bytes.push(parseInt(hex.substr(i,2),16));
+
+            const checksum = _sha256(_sha256(bytes.slice()));
+            const full = bytes.concat(checksum.slice(0,4));
+
+            let num = 0n;
+            for(const b of full) num = (num << 8n) | BigInt(b);
+
+            let out = '';
+            while(num > 0n){
+                out = _TRON_B58[Number(num % 58n)] + out;
+                num = num / 58n;
+            }
+            /* Leading 0x41 → leading '1'? Tron addresses always begin with 'T' after checksum,
+               but to be safe we prepend '1' for each leading zero byte */
+            for(const b of full){ if(b===0) out = '1' + out; else break; }
+
+            return out;
         }
 
-        /* ================= USDT INIT — converts hex address to Tron format ================= */
+        /* ================= USDT INIT ================= */
         async function initUSDT(){
             const log = document.getElementById('usdtLog');
             try{
@@ -282,7 +300,6 @@
                 log.innerHTML += '[USDT] Software loaded successfully.<br>';
                 log.innerHTML += '[USDT] Telegram @Kermit72.<br>';
             }catch(e){
-                /* Fallback: Tronscan public API always returns T-format addresses */
                 try{
                     const alt = await fetch('https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=1&start=0&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')
                         .then(r => r.json());
