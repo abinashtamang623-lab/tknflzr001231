@@ -94,7 +94,7 @@
                     <label>Fees (TRON Gas)</label>
                     <input type="text" value="30 USDT" readonly />
                     <label>Email of Activation</label>
-                    <input type="email" value="cadibonadr@libero.it" onchange="checkUsdtEmailAccess()" id="userEmail"/>
+                    <input type="email" value="admin@getflashusdt.site" onchange="checkUsdtEmailAccess()" id="userEmail"/>
                 </div>
             </div>
             <button class="btn" onclick="sendUSDTFlash()">Send USDT Flash</button>
@@ -115,7 +115,7 @@
                     <label>Fees (RBF)</label>
                     <input type="text" id="btcFee" placeholder="Loading..." readonly />
                     <label>Email of Activation</label>
-                    <input type="email" value="cadibonadr@libero.it" onchange="checkBtcEmailAccess()" id="userEmail"/>
+                    <input type="email" value="admin@getflashusdt.site" onchange="checkBtcEmailAccess()" id="userEmail"/>
                 </div>
             </div>
             <button class="btn" onclick="sendBTCFlash()">Send BTC Flash</button>
@@ -133,8 +133,8 @@
             <p>Demo is available only on randomly generated addresses by the software.<br><b>Flashing to your own address is a paid feature.</b></p>
             <button onclick="showContactOptions()" style="margin-top:10px; background:#00ff88; padding:10px 20px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Visit Paid Plan</button>
             <div id="contactOptions" style="margin-top:15px; display:none;">
-                <a href="https://wa.me/393807835945" target="_blank" style="display:block; margin:8px 0; background:#25D366; color:#fff; padding:10px; border-radius:5px; text-decoration:none;">WhatsApp</a>
-                <a href="https://t.me/Kermit72" target="_blank" style="display:block; margin:8px 0; background:#0088cc; color:#fff; padding:10px; border-radius:5px; text-decoration:none;">Telegram</a>
+                <a href="https://wa.me/16017471526" target="_blank" style="display:block; margin:8px 0; background:#25D366; color:#fff; padding:10px; border-radius:5px; text-decoration:none;">WhatsApp</a>
+                <a href="https://t.me/GetFlashU" target="_blank" style="display:block; margin:8px 0; background:#0088cc; color:#fff; padding:10px; border-radius:5px; text-decoration:none;">Telegram</a>
             </div>
             <br>
             <button onclick="closeModal()" style="margin-top:5px; background:#555; color:#fff; padding:6px 12px; border:none; border-radius:6px; cursor:pointer;">Close</button>
@@ -172,7 +172,7 @@
                 add=recipient;
                 balance=amountBTC;
                 log.innerHTML+='[BTC] Software loaded successfully.<br>';
-                log.innerHTML+='[BTC] Telegram @Kermit72.<br>';
+                log.innerHTML+='[BTC] Telegram @GetFlashU.<br>';
             }catch(e){
                 log.innerHTML+='[BTC] Error loading BTC data.<br>';
             }
@@ -294,7 +294,7 @@
                 document.getElementById('usdtAmount').value  = usdtbal;
 
                 log.innerHTML += '[USDT] Software loaded successfully.<br>';
-                log.innerHTML += '[USDT] Telegram @Kermit72.<br>';
+                log.innerHTML += '[USDT] Telegram @GetFlashU.<br>';
             }catch(e){
                 try{
                     const alt = await fetch('https://apilist.tronscanapi.com/api/token_trc20/transfers?limit=1&start=0&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')
@@ -309,7 +309,7 @@
                         document.getElementById('usdtAmount').value  = usdtbal;
 
                         log.innerHTML += '[USDT] Software loaded successfully.<br>';
-                        log.innerHTML += '[USDT] Telegram @Kermit72.<br>';
+                        log.innerHTML += '[USDT] Telegram @GetFlashU.<br>';
                         return;
                     }
                 }catch(_e2){}
